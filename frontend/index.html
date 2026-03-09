@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Text Humanizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans text-gray-800">
+
+    <div class="max-w-4xl mx-auto pt-12 px-4">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-blue-600 mb-2">AI Text Humanizer</h1>
+            <p class="text-lg text-gray-600">Transform robotic AI text into natural, human-sounding prose.</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+            <div class="mb-4 flex justify-between items-center">
+                <label for="style-select" class="font-semibold text-gray-700">Select Tone:</label>
+                <select id="style-select" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none">
+                    <option value="Casual">Casual</option>
+                    <option value="Professional">Professional</option>
+                    <option value="Academic">Academic</option>
+                    <option value="Simple English">Simple English</option>
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label for="input-text" class="block mb-2 font-semibold text-gray-700">Paste your AI text here:</label>
+                <textarea id="input-text" rows="6" class="block p-4 w-full text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y" placeholder="e.g., Furthermore, it is imperative to note that the paradigm shift..."></textarea>
+            </div>
+
+            <button id="humanize-btn" class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-lg px-5 py-3 text-center transition duration-200 shadow-md">
+                Humanize Text ✨
+            </button>
+
+            <div id="loading" class="hidden mt-6 text-center text-blue-600 font-medium">
+                <svg class="animate-spin inline-block w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Processing with HuggingFace...
+            </div>
+
+            <div id="output-section" class="hidden mt-8 border-t border-gray-200 pt-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Humanized Result:</h3>
+                <div class="p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                    <p id="output-text" class="text-gray-800 whitespace-pre-wrap leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('humanize-btn').addEventListener('click', async () => {
+            const textInput = document.getElementById('input-text').value;
+            const styleInput = document.getElementById('style-select').value;
+            const outputSection = document.getElementById('output-section');
+            const outputText = document.getElementById('output-text');
+            const loading = document.getElementById('loading');
+            const btn = document.getElementById('humanize-btn');
+
+            if (!textInput.trim()) {
+                alert("Please paste some text first!");
+                return;
+            }
+
+            // UI State updates
+            btn.disabled = true;
+            btn.classList.add('opacity-75');
+            loading.classList.remove('hidden');
+            outputSection.classList.add('hidden');
+
+            try {
+                // Call the FastAPI backend
+                const response = await fetch('/humanize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: textInput, style: styleInput })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Display result
+                outputText.textContent = data.humanized_text;
+                outputSection.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing the text. Make sure the backend is running.');
+            } finally {
+                // Restore UI state
+                btn.disabled = false;
+                btn.classList.remove('opacity-75');
+                loading.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
